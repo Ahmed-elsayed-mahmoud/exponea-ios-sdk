@@ -63,6 +63,7 @@ open class CarouselInAppContentBlockView: UIView {
     private var behaviourCallback: InAppContentBlockCallbackType = DefaultInAppContentBlockCallback()
     private var shouSkipCollectionReload = false
     private var didSet = false
+    public var originalCount: Int = 0
 
     @Atomic private var data: [StaticReturnData] = [] {
         didSet {
@@ -168,6 +169,7 @@ open class CarouselInAppContentBlockView: UIView {
                     }
                 let sortedMessages = self.sortContentBlocks(data: toReturn)
                 let input = self.maxMessagesCount > 0 ? Array(sortedMessages.prefix(self.maxMessagesCount)) : sortedMessages
+                self.originalCount = input.count
                 self._data.changeValue(with: { $0 = self.makeDuplicate(input: input) })
                 self.state = .refresh
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -399,7 +401,7 @@ extension CarouselInAppContentBlockView: UICollectionViewDelegateFlowLayout {
         if current > currentTimeStampWithLimit {
             calculator.loadHtml(placedholderId: placeholder, html: message.html)
         } else {
-            state = .stopTimer
+//            state = .stopTimer
             calculator.loadHtml(placedholderId: placeholder, html: message.html)
         }
     }
@@ -434,7 +436,7 @@ extension CarouselInAppContentBlockView: UICollectionViewDataSource {
             let isMessageWithAlwayFrequency = message.message?.frequency == .always
             self?.checkMessage(message: message, shouldBeReloaded: !isMessageWithAlwayFrequency)
             if isMessageWithAlwayFrequency {
-                self?.saveCurrentTimer()
+//                self?.saveCurrentTimer()
             }
         }
         cell.closeClicked = { [weak self] in
@@ -443,7 +445,7 @@ extension CarouselInAppContentBlockView: UICollectionViewDataSource {
                 self?.checkMessage(message: message, shouldBeReloaded: true)
             }
         }
-        cell.touchCallback = saveCurrentTimer
+        cell.touchCallback = startTimer // saveCurrentTimer
         cell.releaseCallback = startTimer
         cell.loadHtml(
             html: message.html,
