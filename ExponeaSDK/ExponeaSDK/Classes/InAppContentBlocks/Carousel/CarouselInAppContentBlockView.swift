@@ -56,6 +56,7 @@ open class CarouselInAppContentBlockView: UIView {
     private let maxMessagesCount: Int
     public var onMessageShown: TypeBlock<CarouselOnShowMessageData>?
     public var onMessageChanged: TypeBlock<CarouselOnChangeData>?
+    public var onNoDataFetched: (() -> Void)?
     private var customHeight: CGFloat?
     private var currentMessage: StaticReturnData?
     private var alreadyShowedMessages: [String] = []
@@ -63,7 +64,9 @@ open class CarouselInAppContentBlockView: UIView {
     private var behaviourCallback: InAppContentBlockCallbackType = DefaultInAppContentBlockCallback()
     private var shouSkipCollectionReload = false
     private var didSet = false
-    public var originalCount: Int = 0
+    public var originalCount: Int = 0 {
+        
+    }
 
     @Atomic private var data: [StaticReturnData] = [] {
         didSet {
@@ -176,6 +179,7 @@ open class CarouselInAppContentBlockView: UIView {
                     self.startCarouseling()
                 }
             } expiredCompletion: { [weak self] in
+                self?.originalCount = 0
                 if !isTriggered {
                     self?.reload(isTriggered: true)
                 }
