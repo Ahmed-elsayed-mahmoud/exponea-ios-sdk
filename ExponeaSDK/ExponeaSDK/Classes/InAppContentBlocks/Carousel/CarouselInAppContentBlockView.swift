@@ -65,7 +65,11 @@ open class CarouselInAppContentBlockView: UIView {
     private var shouSkipCollectionReload = false
     private var didSet = false
     public var originalCount: Int = 0 {
-        
+        didSet {
+            if self.originalCount == 0 {
+                onNoDataFetched?()
+            }
+        }
     }
 
     @Atomic private var data: [StaticReturnData] = [] {
