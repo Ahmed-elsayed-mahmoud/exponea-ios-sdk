@@ -14,7 +14,7 @@ import UIKit
 
 extension Exponea {
     /// Shared instance of ExponeaSDK.
-    public internal(set) static var shared = ExponeaInternal()
+    nonisolated(unsafe) public internal(set) static var shared = ExponeaInternal()
 
     internal static let isBeingTested: Bool = {
         return ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
