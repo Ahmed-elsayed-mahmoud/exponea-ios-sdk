@@ -56,6 +56,7 @@ open class CarouselInAppContentBlockView: UIView {
     private let maxMessagesCount: Int
     public var onMessageShown: TypeBlock<CarouselOnShowMessageData>?
     public var onMessageChanged: TypeBlock<CarouselOnChangeData>?
+    public var onNoDataFetched: (() -> Void)?
     private var customHeight: CGFloat?
     private var currentMessage: StaticReturnData?
     private var alreadyShowedMessages: [String] = []
@@ -63,6 +64,13 @@ open class CarouselInAppContentBlockView: UIView {
     private var behaviourCallback: InAppContentBlockCallbackType = DefaultInAppContentBlockCallback()
     private var shouSkipCollectionReload = false
     private var didSet = false
+    public var originalCount: Int = 0 {
+        didSet {
+            if self.originalCount == 0 {
+                onNoDataFetched?()
+            }
+        }
+    }
 
     @Atomic private var data: [StaticReturnData] = [] {
         didSet {
@@ -170,12 +178,14 @@ open class CarouselInAppContentBlockView: UIView {
                     }
                 let sortedMessages = self.sortContentBlocks(data: toReturn)
                 let input = self.maxMessagesCount > 0 ? Array(sortedMessages.prefix(self.maxMessagesCount)) : sortedMessages
+                self.originalCount = input.count
                 self._data.changeValue(with: { $0 = self.makeDuplicate(input: input) })
                 self.state = .refresh
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     self.startCarouseling()
                 }
             } expiredCompletion: { [weak self] in
+                self?.originalCount = 0
                 if !isTriggered {
                     self?.reload(isTriggered: true)
                 }
@@ -221,24 +231,24 @@ open class CarouselInAppContentBlockView: UIView {
                 self.state = .shouldReload
             }
         } refreshCallback: { [weak self] in
-            guard let self else { return }
-            self.inAppContentBlocksManager.refreshMessage(message: messageResponse) { message in
-                if let newData = self.inAppContentBlocksManager.prepareCarouselStaticData(messages: message) {
-                    var indexes: [Int] = []
-                    for message in self.data.filter({ $0.message?.id == message.id }) {
-                        if let index = self.data.firstIndex(where: { $0.id == message.id }) {
-                            indexes.append(index)
-                        }
-                    }
-                    indexes.forEach { index in
-                        if self.data[safeIndex: index] != nil {
-                            self.shouSkipCollectionReload = true
-                            self._data.changeValue(with: { $0[index] = newData })
-                            self.shouSkipCollectionReload = false
-                        }
-                    }
-                }
-            }
+//            guard let self else { return }
+//            self.inAppContentBlocksManager.refreshMessage(message: messageResponse) { message in
+//                if let newData = self.inAppContentBlocksManager.prepareCarouselStaticData(messages: message) {
+//                    var indexes: [Int] = []
+//                    for message in self.data.filter({ $0.message?.id == message.id }) {
+//                        if let index = self.data.firstIndex(where: { $0.id == message.id }) {
+//                            indexes.append(index)
+//                        }
+//                    }
+//                    indexes.forEach { index in
+//                        if self.data[safeIndex: index] != nil {
+//                            self.shouSkipCollectionReload = true
+//                            self._data.changeValue(with: { $0[index] = newData })
+//                            self.shouSkipCollectionReload = false
+//                        }
+//                    }
+//                }
+//            }
         }
     }
 
@@ -401,7 +411,7 @@ extension CarouselInAppContentBlockView: UICollectionViewDelegateFlowLayout {
         if current > currentTimeStampWithLimit {
             calculator.loadHtml(placedholderId: placeholder, html: message.html)
         } else {
-            state = .stopTimer
+//            state = .stopTimer
             calculator.loadHtml(placedholderId: placeholder, html: message.html)
         }
     }
@@ -436,7 +446,7 @@ extension CarouselInAppContentBlockView: UICollectionViewDataSource {
             let isMessageWithAlwayFrequency = message.message?.frequency == .always
             self?.checkMessage(message: message, shouldBeReloaded: !isMessageWithAlwayFrequency)
             if isMessageWithAlwayFrequency {
-                self?.saveCurrentTimer()
+//                self?.saveCurrentTimer()
             }
         }
         cell.closeClicked = { [weak self] in
@@ -445,7 +455,7 @@ extension CarouselInAppContentBlockView: UICollectionViewDataSource {
                 self?.checkMessage(message: message, shouldBeReloaded: true)
             }
         }
-        cell.touchCallback = saveCurrentTimer
+        cell.touchCallback = startTimer // saveCurrentTimer
         cell.releaseCallback = startTimer
         cell.loadHtml(
             html: message.html,
